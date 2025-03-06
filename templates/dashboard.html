@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Trading Dashboard</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial', sans-serif; }
+        body { background-color: #f5f6fa; color: #333; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1 { font-size: 2.5em; color: #2c3e50; text-align: center; margin-bottom: 20px; font-weight: bold; text-transform: uppercase; }
+        .tab { overflow: hidden; background-color: #34495e; border-radius: 5px 5px 0 0; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .tab button { float: left; border: none; outline: none; padding: 14px 24px; cursor: pointer; font-size: 1.1em; color: #fff; background-color: inherit; transition: background-color 0.3s; }
+        .tab button:hover { background-color: #465c71; }
+        .tab button.active { background-color: #4a90e2; }
+        .tabcontent { display: none; padding: 20px; background-color: #fff; border: 1px solid #ddd; border-radius: 0 0 5px 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: relative; }
+        .loading { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1.2em; color: #4a90e2; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #34495e; color: #fff; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        tr:hover { background-color: #e9ecef; }
+        form { background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        form label { font-weight: bold; color: #2c3e50; margin-bottom: 8px; }
+        form input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em; transition: border-color 0.3s; }
+        form input:focus { border-color: #4a90e2; outline: none; }
+        form button { padding: 10px 20px; background-color: #4a90e2; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; transition: background-color 0.3s; }
+        form button:hover { background-color: #357abd; }
+        .toggle-switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #4a90e2; }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .delete-btn { background-color: #e74c3c; color: #fff; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; }
+        .delete-btn:hover { background-color: #c0392b; }
+        .apply-btn { background-color: #2ecc71; color: #fff; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; margin-left: 10px; }
+        .apply-btn:hover { background-color: #27ae60; }
+        .sync-btn { background-color: #f39c12; color: #fff; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; margin-bottom: 10px; margin-right: 10px; }
+        .sync-btn:hover { background-color: #e67e22; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Trading Dashboard</h1>
+        <div class="tab">
+            <button class="tablinks" onclick="openTab(event, 'OpenPositions')" id="defaultOpen">Open Positions</button>
+            <button class="tablinks" onclick="openTab(event, 'TradeLogs')">Trade Logs</button>
+            <button class="tablinks" onclick="openTab(event, 'ClosedPositions')">Closed Positions</button>
+            <button class="tablinks" onclick="openTab(event, 'AccountConfig')">Account Config</button>
+            <button class="tablinks" onclick="openTab(event, 'APIManagement')">API Management</button>
+        </div>
+
+        <div id="OpenPositions" class="tabcontent">
+            <h2>Open Positions</h2>
+            <div class="loading" id="loading">Loading...</div>
+            <table id="positions">
+                <tr><th>User ID</th><th>Symbol</th><th>Size USDT</th><th>Entry Price</th><th>Mark Price</th><th>Unrealized PNL</th></tr>
+            </table>
+        </div>
+
+        <div id="TradeLogs" class="tabcontent">
+            <h2>Trade Logs</h2>
+            <button class="sync-btn" onclick="updateOrderSizes()">Update Order Sizes</button>
+            <div class="loading" id="loading">Loading...</div>
+            <table id="orders">
+                <tr><th>User ID</th><th>Order ID</th><th>Symbol</th><th>Side</th><th>Type</th><th>Price</th><th>Size USDT</th><th>Status</th><th>Time</th></tr>
+            </table>
+        </div>
+
+        <div id="ClosedPositions" class="tabcontent">
+            <h2>Closed Positions</h2>
+            <button class="sync-btn" onclick="syncClosedPositions()">Sync Closed Positions</button>
+            <button class="sync-btn" onclick="updateClosedPositionSizes()">Update Position Sizes</button>
+            <div class="loading" id="loading">Loading...</div>
+            <table id="closed_positions">
+                <tr><th>User ID</th><th>Symbol</th><th>Size USDT</th><th>Entry Price</th><th>Exit Price</th><th>Realized PNL</th><th>Close Time</th></tr>
+            </table>
+        </div>
+
+        <div id="AccountConfig" class="tabcontent">
+            <h2>Account Config</h2>
+            <div class="loading" id="loading">Loading...</div>
+            <table id="config">
+                <tr><th>User ID</th><th>Available Fund</th><th>Live PNL</th><th>Status</th><th>Multiplier</th><th>Leverage</th><th>Actions</th></tr>
+            </table>
+        </div>
+
+        <div id="APIManagement" class="tabcontent">
+            <h2>API Management</h2>
+            <form id="apiForm">
+                <label for="user_id">User ID:</label>
+                <input type="text" id="user_id" name="user_id" placeholder="e.g., Kiran" required>
+                <label for="api_key">API Key:</label>
+                <input type="text" id="api_key" name="api_key" placeholder="Enter your Binance API Key" required>
+                <label for="api_secret">API Secret:</label>
+                <input type="text" id="api_secret" name="api_secret" placeholder="Enter your Binance API Secret" required>
+                <label for="multiplier">Multiplier (default 1.0):</label>
+                <input type="number" id="multiplier" name="multiplier" step="0.1" value="1.0">
+                <label for="leverage">Leverage (default 1):</label>
+                <input type="number" id="leverage" name="leverage" min="1" value="1" required>
+                <button type="submit">Register API Details</button>
+            </form>
+        </div>
+
+        <script>
+            function openTab(evt, tabName) {
+                var tabcontent = document.getElementsByClassName("tabcontent");
+                for (var i = 0; i < tabcontent.length; i++) tabcontent[i].style.display = "none";
+                var tablinks = document.getElementsByClassName("tablinks");
+                for (var i = 0; i < tablinks.length; i++) tablinks[i].className = tablinks[i].className.replace(" active", "");
+                document.getElementById(tabName).style.display = "block";
+                evt.currentTarget.className += " active";
+                if (tabName === 'AccountConfig') updateConfig();
+                if (tabName === 'TradeLogs') updateOrders();
+                if (tabName === 'OpenPositions') updateOpenPositions();
+                if (tabName === 'ClosedPositions') updateClosedPositions();
+            }
+
+            document.getElementById("defaultOpen").click();
+
+            function updateTable(tableId, data, columns) {
+                const table = document.getElementById(tableId);
+                while (table.rows.length > 1) table.deleteRow(1);
+                if (!data) return;
+                data.forEach(row => {
+                    let tr = table.insertRow();
+                    columns.forEach(col => {
+                        let td = tr.insertCell();
+                        if (tableId === 'config' && col === 'status') {
+                            td.innerHTML = `
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="toggle_${row.user_id}" ${row[col] ? 'checked' : ''} onchange="updateStatus('${row.user_id}', this.checked)">
+                                    <span class="slider"></span>
+                                </label>`;
+                        } else if (tableId === 'config' && (col === 'multiplier' || col === 'leverage')) {
+                            td.innerHTML = `
+                                <input type="number" id="${col}_${row.user_id}" value="${row[col]}" step="${col === 'multiplier' ? '0.1' : '1'}" min="${col === 'leverage' ? '1' : '0'}">
+                                <button class="apply-btn" onclick="apply${col === 'multiplier' ? 'Multiplier' : 'Leverage'}('${row.user_id}')">Apply</button>`;
+                        } else if (tableId === 'config' && col === 'actions') {
+                            td.innerHTML = `<button class="delete-btn" onclick="deleteAccount('${row.user_id}')">Delete</button>`;
+                        } else if (['size_usdt'].includes(col)) {
+                            td.textContent = (row[col] !== undefined && row[col] > 0) ? row[col].toFixed(2) : 'N/A';
+                        } else {
+                            td.textContent = row[col] !== undefined ? row[col] : '';
+                        }
+                    });
+                });
+            }
+
+            function handleError(error, message) {
+                console.error(message, error);
+                alert(message);
+            }
+
+            function updateConfig() {
+                document.querySelector('#AccountConfig .loading').style.display = 'block';
+                fetch('/config')
+                    .then(response => response.json())
+                    .then(data => updateTable('config', data, ['user_id', 'available_fund', 'live_pnl', 'status', 'multiplier', 'leverage', 'actions']))
+                    .catch(error => handleError(error, 'Failed to fetch account config'))
+                    .finally(() => document.querySelector('#AccountConfig .loading').style.display = 'none');
+            }
+
+            function updateOrders() {
+                document.querySelector('#TradeLogs .loading').style.display = 'block';
+                fetch('/orders')
+                    .then(response => response.json())
+                    .then(data => updateTable('orders', data, ['user_id', 'order_id', 'symbol', 'side', 'order_type', 'price', 'size_usdt', 'status', 'time']))
+                    .catch(error => handleError(error, 'Failed to fetch trade logs'))
+                    .finally(() => document.querySelector('#TradeLogs .loading').style.display = 'none');
+            }
+
+            function updateOrderSizes() {
+                document.querySelector('#TradeLogs .loading').style.display = 'block';
+                fetch('/update_order_sizes', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                }).then(response => response.json())
+                  .then(data => { alert(data.message); updateOrders(); })
+                  .catch(error => handleError(error, 'Failed to update order sizes'));
+            }
+
+            function updateOpenPositions() {
+                document.querySelector('#OpenPositions .loading').style.display = 'block';
+                fetch('/open_positions')
+                    .then(response => response.json())
+                    .then(data => updateTable('positions', data, ['user_id', 'symbol', 'size_usdt', 'entry_price', 'mark_price', 'unrealized_pnl']))
+                    .catch(error => handleError(error, 'Failed to fetch open positions'))
+                    .finally(() => document.querySelector('#OpenPositions .loading').style.display = 'none');
+            }
+
+            function updateClosedPositions() {
+                document.querySelector('#ClosedPositions .loading').style.display = 'block';
+                fetch('/closed_positions')
+                    .then(response => response.json())
+                    .then(data => updateTable('closed_positions', data, ['user_id', 'symbol', 'size_usdt', 'entry_price', 'exit_price', 'realized_pnl', 'close_time']))
+                    .catch(error => handleError(error, 'Failed to fetch closed positions'))
+                    .finally(() => document.querySelector('#ClosedPositions .loading').style.display = 'none');
+            }
+
+            function syncClosedPositions() {
+                document.querySelector('#ClosedPositions .loading').style.display = 'block';
+                fetch('/sync_closed_positions', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                }).then(response => response.json())
+                  .then(data => { alert(data.message); updateClosedPositions(); })
+                  .catch(error => handleError(error, 'Failed to sync closed positions'));
+            }
+
+            function updateClosedPositionSizes() {
+                document.querySelector('#ClosedPositions .loading').style.display = 'block';
+                fetch('/update_closed_position_sizes', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                }).then(response => response.json())
+                  .then(data => { alert(data.message); updateClosedPositions(); })
+                  .catch(error => handleError(error, 'Failed to update closed position sizes'));
+            }
+
+            function updateStatus(userId, isChecked) {
+                fetch('/update_status', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({user_id: userId, status: isChecked ? 1 : 0})
+                }).then(response => response.json())
+                  .then(data => { if (data.error) alert(data.error); else updateConfig(); })
+                  .catch(error => handleError(error, 'Failed to update status'));
+            }
+
+            function applyMultiplier(userId) {
+                const multiplier = parseFloat(document.getElementById(`multiplier_${userId}`).value) || 1.0;
+                if (multiplier < 0) { alert("Multiplier must be non-negative"); return; }
+                fetch('/update_multiplier', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({user_id: userId, multiplier: multiplier})
+                }).then(response => response.json())
+                  .then(data => { if (data.error) alert(data.error); else updateConfig(); })
+                  .catch(error => handleError(error, 'Failed to update multiplier'));
+            }
+
+            function applyLeverage(userId) {
+                const leverage = parseInt(document.getElementById(`leverage_${userId}`).value) || 1;
+                if (leverage < 1) { alert("Leverage must be at least 1"); return; }
+                fetch('/update_leverage', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({user_id: userId, leverage: leverage})
+                }).then(response => response.json())
+                  .then(data => { if (data.error) alert(data.error); else updateConfig(); })
+                  .catch(error => handleError(error, 'Failed to update leverage'));
+            }
+
+            function deleteAccount(userId) {
+                if (confirm(`Are you sure you want to delete ${userId}?`)) {
+                    fetch('/delete_account', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({user_id: userId})
+                    }).then(response => response.json())
+                      .then(data => { if (data.error) alert(data.error); else { alert(data.message); updateConfig(); } })
+                      .catch(error => handleError(error, 'Failed to delete account'));
+                }
+            }
+
+            document.getElementById('apiForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                fetch('/save_api', {
+                    method: 'POST',
+                    body: new FormData(this)
+                }).then(response => response.json())
+                  .then(data => { if (data.error) alert(data.error); else { alert(data.message); updateConfig(); } })
+                  .catch(error => handleError(error, 'Failed to save API details'));
+            });
+
+            setInterval(() => {
+                if (document.getElementById('AccountConfig').style.display === 'block') updateConfig();
+                if (document.getElementById('TradeLogs').style.display === 'block') updateOrders();
+                if (document.getElementById('OpenPositions').style.display === 'block') updateOpenPositions();
+                if (document.getElementById('ClosedPositions').style.display === 'block') updateClosedPositions();
+            }, 5000);
+        </script>
+    </div>
+</body>
+</html>
