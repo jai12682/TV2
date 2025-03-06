@@ -1,0 +1,7 @@
+{
+    "token": "secret123",
+    "symbol": "GALAUSDT",
+    "side": "buy",
+    "size": 10,
+    "market": "futures"
+  }
